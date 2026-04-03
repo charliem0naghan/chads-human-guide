@@ -1,0 +1,17 @@
+{
+  "name": "chads-human-guide",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "copy-vault": "node scripts/copy-vault.js"
+  },
+  "dependencies": {
+    "astro": "^4.16.0"
+  },
+  "devDependencies": {
+    "unist-util-visit": "^5.0.0"
+  }
+}

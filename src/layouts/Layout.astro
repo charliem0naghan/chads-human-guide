@@ -1,0 +1,111 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Pass the full search index JSON string to enable search */
+  searchIndexJson?: string;
+}
+
+const { title, description = "A complete guide to human life — written for Chad the alien.", searchIndexJson } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} — Chad's Human Guide</title>
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  </head>
+  <body>
+
+    <header class="site-header">
+      <a href={`${base}/`} class="site-logo">
+        <span class="logo-icon">🛸</span>
+        <span class="logo-text">Chad's Human Guide</span>
+      </a>
+
+      <div class="header-search">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search all notes…"
+          autocomplete="off"
+          aria-label="Search notes"
+        />
+        <div class="search-results" id="search-results" role="listbox"></div>
+      </div>
+
+      <nav class="header-nav">
+        <a href={`${base}/`}>Home</a>
+      </nav>
+
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">☰</button>
+    </header>
+
+    <slot />
+
+    <footer class="site-footer">
+      <p>Chad's Human Guide &mdash; A field manual for extraterrestrial visitors.</p>
+      <p style="margin-top:0.4rem"><a href={`${base}/`}>← Back to all topics</a></p>
+    </footer>
+
+    <!-- Search functionality -->
+    {searchIndexJson && (
+      <script type="module" define:vars={{ searchIndexJson, base }}>
+        const index = JSON.parse(searchIndexJson);
+        const input = document.getElementById('search-input');
+        const results = document.getElementById('search-results');
+
+        function renderResults(matches) {
+          if (matches.length === 0) {
+            results.innerHTML = '<div class="search-no-results">No notes found.</div>';
+          } else {
+            results.innerHTML = matches.slice(0, 8).map(n =>
+              `<a href="${base}/notes/${n.slug}" class="search-result-item">
+                <div class="result-title">${n.title}</div>
+                <div class="result-cat">${n.category}</div>
+              </a>`
+            ).join('');
+          }
+          results.classList.add('open');
+        }
+
+        input.addEventListener('input', () => {
+          const q = input.value.trim().toLowerCase();
+          if (q.length < 2) { results.classList.remove('open'); return; }
+          const matches = index.filter(n =>
+            n.title.toLowerCase().includes(q) ||
+            n.category.toLowerCase().includes(q)
+          );
+          renderResults(matches);
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.header-search')) results.classList.remove('open');
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { results.classList.remove('open'); input.blur(); }
+        });
+      </script>
+    )}
+
+    <!-- Mobile sidebar toggle -->
+    <script>
+      const toggle = document.getElementById('menu-toggle');
+      const sidebar = document.querySelector('.sidebar');
+      if (toggle && sidebar) {
+        toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+      }
+    </script>
+
+  </body>
+</html>

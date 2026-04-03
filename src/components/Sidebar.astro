@@ -1,0 +1,69 @@
+---
+interface NoteEntry {
+  slug: string;
+  data: {
+    title: string;
+    category: string;
+    categorySlug: string;
+    subcategory?: string;
+    subcategorySlug?: string;
+  };
+}
+
+interface Props {
+  currentSlug: string;
+  categorySlug: string;
+  categoryName: string;
+  notes: NoteEntry[];
+}
+
+const { currentSlug, categorySlug, categoryName, notes } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Split notes into main category notes and subcategory groups
+const mainNotes = notes.filter(n => !n.data.subcategory);
+const subGroups: Record<string, NoteEntry[]> = {};
+for (const n of notes) {
+  if (n.data.subcategory) {
+    const key = n.data.subcategory;
+    if (!subGroups[key]) subGroups[key] = [];
+    subGroups[key].push(n);
+  }
+}
+---
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href={`${base}/`} class="sidebar-back">← All topics</a>
+    <a href={`${base}/category/${categorySlug}`} class="sidebar-cat-title">{categoryName}</a>
+  </div>
+
+  <!-- Main notes in category -->
+  {mainNotes.length > 0 && (
+    <div class="sidebar-group">
+      {mainNotes.map(note => (
+        <a
+          href={`${base}/notes/${note.slug}`}
+          class={`sidebar-link${note.slug === currentSlug ? ' active' : ''}`}
+        >
+          {note.data.title}
+        </a>
+      ))}
+    </div>
+  )}
+
+  <!-- Subcategory groups (e.g. Careers) -->
+  {Object.entries(subGroups).map(([subName, subNotes]) => (
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">{subName}</div>
+      {subNotes.map(note => (
+        <a
+          href={`${base}/notes/${note.slug}`}
+          class={`sidebar-link${note.slug === currentSlug ? ' active' : ''}`}
+        >
+          {note.data.title}
+        </a>
+      ))}
+    </div>
+  ))}
+</aside>

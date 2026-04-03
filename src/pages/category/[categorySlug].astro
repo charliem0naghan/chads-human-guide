@@ -1,0 +1,104 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const allNotes = await getCollection('notes');
+
+  // Gather unique categories (excluding root)
+  const catMap: Record<string, typeof allNotes> = {};
+  for (const note of allNotes) {
+    if (note.data.categorySlug === 'root') continue;
+    if (!catMap[note.data.categorySlug]) catMap[note.data.categorySlug] = [];
+    catMap[note.data.categorySlug].push(note);
+  }
+
+  return Object.entries(catMap).map(([categorySlug, notes]) => ({
+    params: { categorySlug },
+    props: { notes, categoryName: notes[0].data.category },
+  }));
+}
+
+const { notes, categoryName } = Astro.props;
+const { categorySlug } = Astro.params;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Category icon map
+const ICONS: Record<string, string> = {
+  '00-start-here': '🚀',
+  '01-planet-earth-and-the-universe': '🌍',
+  '02-the-human-body': '🧬',
+  '03-communication': '💬',
+  '04-mathematics': '🔢',
+  '05-science-and-nature': '🔬',
+  '06-human-society': '🏛️',
+  '07-cultures-and-religions': '🌐',
+  '08-daily-life': '☀️',
+  '09-relationships': '❤️',
+  '10-technology': '💻',
+  '11-arts-sports-and-recreation': '🎨',
+  '12-critical-thinking-and-media': '🧠',
+  '13-being-a-good-human': '✨',
+  '14-bonus-expansions': '⭐',
+};
+
+const icon = ICONS[categorySlug] ?? '📁';
+
+// Separate main notes from subcategory notes
+const mainNotes = notes.filter(n => !n.data.subcategory);
+const subGroups: Record<string, typeof notes> = {};
+for (const n of notes) {
+  if (n.data.subcategory) {
+    if (!subGroups[n.data.subcategory]) subGroups[n.data.subcategory] = [];
+    subGroups[n.data.subcategory].push(n);
+  }
+}
+
+// Strip leading number prefix for display
+const displayName = categoryName.replace(/^\d+ - /, '');
+---
+
+<Layout title={displayName}>
+  <div class="cat-page">
+    <div class="cat-hero">
+      <div class="cat-icon">{icon}</div>
+      <h1>{displayName}</h1>
+      <p>{notes.length} {notes.length === 1 ? 'note' : 'notes'} in this section</p>
+    </div>
+
+    <ul class="note-list">
+      <!-- Main notes -->
+      {mainNotes.length > 0 && (
+        <li>
+          <div class="note-list-group">
+            {mainNotes.map(note => (
+              <div class="note-list-item">
+                <a href={`${base}/notes/${note.slug}`}>
+                  <span class="note-list-title">{note.data.title}</span>
+                  <span class="arrow">→</span>
+                </a>
+              </div>
+            ))}
+          </div>
+        </li>
+      )}
+
+      <!-- Subcategory groups -->
+      {Object.entries(subGroups).map(([subName, subNotes]) => (
+        <li>
+          <div class="note-list-group">
+            <div class="note-list-group-title">{subName}</div>
+            {subNotes.map(note => (
+              <div class="note-list-item">
+                <a href={`${base}/notes/${note.slug}`}>
+                  <span class="note-list-title">{note.data.title}</span>
+                  <span class="arrow">→</span>
+                </a>
+              </div>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Layout>

@@ -1,0 +1,96 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const allNotes = await getCollection('notes');
+
+// Count notes per category (excluding root)
+const countByCategory: Record<string, number> = {};
+for (const note of allNotes) {
+  if (note.data.categorySlug !== 'root') {
+    countByCategory[note.data.categorySlug] = (countByCategory[note.data.categorySlug] || 0) + 1;
+  }
+}
+
+// Search index for homepage search
+const searchIndex = allNotes
+  .filter(n => n.data.categorySlug !== 'root')
+  .map(n => ({
+    title: n.data.title,
+    slug: n.slug,
+    category: n.data.category,
+    categorySlug: n.data.categorySlug,
+  }));
+
+const CATEGORIES = [
+  { folder: '00 - Start Here',                    slug: '00-start-here',                        icon: '🚀', desc: 'Your entry point to life on Earth' },
+  { folder: '01 - Planet Earth & The Universe',   slug: '01-planet-earth-and-the-universe',     icon: '🌍', desc: "The planet you've crash-landed on" },
+  { folder: '02 - The Human Body',                slug: '02-the-human-body',                    icon: '🧬', desc: "The biological vessel you're inhabiting" },
+  { folder: '03 - Communication',                 slug: '03-communication',                     icon: '💬', desc: 'Language, writing, and body language' },
+  { folder: '04 - Mathematics',                   slug: '04-mathematics',                       icon: '🔢', desc: 'Numbers — the universal language' },
+  { folder: '05 - Science & Nature',              slug: '05-science-and-nature',                icon: '🔬', desc: 'Physics, biology, chemistry, and method' },
+  { folder: '06 - Human Society',                 slug: '06-human-society',                     icon: '🏛️', desc: 'Governments, laws, money, and careers' },
+  { folder: '07 - Cultures & Religions',          slug: '07-cultures-and-religions',            icon: '🌐', desc: 'The glorious variety of human belief' },
+  { folder: '08 - Daily Life',                    slug: '08-daily-life',                        icon: '☀️', desc: 'Housing, clothing, and daily rhythms' },
+  { folder: '09 - Relationships',                 slug: '09-relationships',                     icon: '❤️', desc: 'Family, friendship, romance, community' },
+  { folder: '10 - Technology',                    slug: '10-technology',                        icon: '💻', desc: 'Internet, phones, AI, social media' },
+  { folder: '11 - Arts, Sports & Recreation',     slug: '11-arts-sports-and-recreation',        icon: '🎨', desc: 'Music, art, sports, movies, and play' },
+  { folder: '12 - Critical Thinking & Media',     slug: '12-critical-thinking-and-media',       icon: '🧠', desc: 'How to think clearly and not be fooled' },
+  { folder: '13 - Being a Good Human',            slug: '13-being-a-good-human',                icon: '✨', desc: 'Ethics, mental health, and giving back' },
+  { folder: '14 - Bonus Expansions',              slug: '14-bonus-expansions',                  icon: '⭐', desc: 'Deep dives: psychology, finance, history' },
+];
+
+// Extract number prefix for display
+function catNumber(folder: string) {
+  const m = folder.match(/^(\d+)/);
+  return m ? m[1] : '';
+}
+function catLabel(folder: string) {
+  return folder.replace(/^\d+ - /, '');
+}
+
+const totalNotes = allNotes.filter(n => n.data.categorySlug !== 'root').length;
+const searchIndexJson = JSON.stringify(searchIndex);
+---
+
+<Layout title="Home" searchIndexJson={searchIndexJson}>
+
+  <section class="hero">
+    <div class="hero-badge">Field Manual for Extraterrestrial Visitors</div>
+    <h1>Chad's Human Guide</h1>
+    <p class="hero-sub">
+      You crashed on Earth. Humans are everywhere. This is the instruction manual
+      they forgot to give themselves — now compiled for you, Chad.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">{totalNotes}</div>
+        <div class="lbl">Notes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">15</div>
+        <div class="lbl">Topics</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">1</div>
+        <div class="lbl">Alien Reader</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="categories-section">
+    <div class="section-title">Browse all topics</div>
+    <div class="cards-grid">
+      {CATEGORIES.map(cat => (
+        <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/category/${cat.slug}`} class="category-card">
+          <div class="card-icon">{cat.icon}</div>
+          <div class="card-number">Section {catNumber(cat.folder)}</div>
+          <div class="card-title">{catLabel(cat.folder)}</div>
+          <div class="card-desc">{cat.desc}</div>
+          <div class="card-count">{countByCategory[cat.slug] ?? 0} notes</div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+</Layout>
