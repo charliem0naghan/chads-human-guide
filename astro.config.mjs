@@ -23,7 +23,7 @@ try {
 }
 
 export default defineConfig({
-  site: 'https://charliemonaghan.github.io',
+  site: 'https://charliem0naghan.github.io',
   base: '/chads-human-guide',
   output: 'static',
   markdown: {
